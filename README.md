@@ -1,456 +1,330 @@
-# SourceSync Android SDK
+# SourceSync SDK
 
 ## Overview
-SourceSync is a platform that syncronizes metadata with content for almost any reason. Monetize content, educate your viewers, sell related merchandise, provide trivia, additional content, you name it. Monetize or otherwise support your data with dozens of additional layers of information, autmatically, including:
+SourceSync is an SDK with Android, C#, Swift, Kotlin, Web, React-Native, and BrightScript (Roku) native implementations.
 
-1. Transcripts.
-2. Descriptions of what's on screen.
-3. Mood and sentiment data.
-4. Categories contained within the moment including advertizing (IAB v1, v2 and v3 supported), nouns and moure.
-5. Keywords contained within the moment, including people, places, things, goals, scores, underdogs, and more.
-6. Entities within content, including Wikipedia IDs, Google Knolwedge Graph IDs, IMDB IDs and more.
+SourceSync allows synchronized overlay content to be displayed on top of video content. The system supports multiple overlay positions with independent content streams, making it possible to show different content at different positions simultaneously.
 
-The Android SDK is a native implementation that enables SourceSync within your app. It allows synchronized overlay content to be displayed on top of video content. The system supports multiple overlay positions with independent content streams, making it possible to show different content at different positions simultaneously.
+## Core Components
 
-## Installation
+### SourceSync
+Handles:
+- Initialization and setup
+- Distribution loading and management
+- Overlay creation and positioning
+- Video position monitoring
+- Activation state management
+- Content display synchronization
 
-### Step 1: Add JitPack repository
-Add JitPack repository in your root build.gradle at the end of repositories:
-
-```gradle
-allprojects {
-    repositories {
-        ...
-        maven { url 'https://jitpack.io' }
-    }
-}
-```
-
-### Step 2: Add the dependency
-Add the dependency to your app's build.gradle:
-
-```gradle
-dependencies {
-    implementation 'com.github.Source-Digital.native-sdk:sourcesync-android:v0.0.1'
-}
-```
-
-## Quick Start
-
-### Get an API key
-Like most APIs, SourceSync requires an API key for usage. This key dictates what you have access to, your settings and more. Get one by visiting the [developer portal](https://developer.sourcesync.io), giving yourself one by logging into the admin app ["Kurator"](https://admin.sourcesync.io) (under your account page, then the organization page, then the access tab), or to quickly kick the tires, just use our demo key, which is ```app.v1.demo```
-
-### Initialize SDK
+Key methods:
 ```java
-// Initialize the SDK with your API key
-SourceSync sourcesync = SourceSync.setup(context, "your-api-key");
-```
+// Initialize the SDK
+SourceSync sourcesync = SourceSync.setup(context, "api-key");
 
-### Load a Distribution
-A ```distribution``` is content that has been curated specifically for SourceSync. In addition to just content we process for metadata, a distribution has even more to offer, like specific access restrictions, analytics, and optional manual or automatically added ```activations``` that are time-aligned for your audience.
-
-```java
-// Load a content distribution
+// Load a distribution
 Distribution distribution = sourcesync.getDistribution("distribution-id");
-```
- ### Plop it on screen
- ```java
-// Create overlay containers for all positions
+
+// Create overlay containers for specified positions
 Map<String, View> overlays = sourcesync.createPositionedOverlays(
     distribution, 
     videoView, 
-    "top", "bottom", "left", "right"
-);
-
-// Add overlays to your layout
-layout.addView(overlays.get("top"));
-layout.addView(overlays.get("bottom"));
-layout.addView(overlays.get("left"));
-layout.addView(overlays.get("right"));
-```
-That's it! Activations will now show in your app in the places you want!
-
-# Diving deeper
-
-### What is context?
-In Android, ```context``` is an interface to global informaiton about the app environement. It's typically an Activity or Application instance that provides access to resources, system services, and/or application-level operations. SourceSync will use this to automatically syncronize to your video and help you easily setup overlays in your application.
-
-```java
-// In an Activity
-SourceSync.setup(this, "your-api-key");
-
-// OR using application context
-SourceSync.setup(getApplicationContext(), "your-api-key");
-
-// OR from a Fragment
-SourceSync.setup(requireContext(), "your-api-key");
-```
-
-# Settings
-SourceSync revolves around settings. They can be changed in real-time and can totally reconfigure the entire behavior of the application in any way you can imagine.
-
-### Customizing settings
-
-Optionally, you can customize anything the SDK does by passing settings like this:
-
-```java
-// Initialize the SDK with your API key and your settings overrides
-SourceSync sourcesync = SourceSync.setup(context, "your-api-key", settings);
-```
-
-Where ```settings``` is just a JSON object that follows our settings schema.
-
-### Get settings in realtime
-Don't want to hard-code your settings in your app? We already took care of that for you! You can provide settings right within your API Key. From [Kurator](https://admin.sourcesync.io), go to your account page, then organization, then access, they create a new key or tap an existing key. Click on the settings tab. You can create your custom settings here. Whatever you enter will be applied to every subsequnt access to our platform, instantly. In this way, you can update activation previews, colors, text sizes, you name it, reconfiguring your app on the fly - reprogram your app from the key alone! Issue different versions of your app by just issuing different keys to your customers!
-
-Automatically, and by default, SourceSync will apply your key settings on top of our default settings. So just simply setting them for your key is all you need to do, you don't even need to provide a settings object in your app. **this is all provided by default**.
-
-### Use SourceSync for your own settings
-Like our realtime settings feature and want to configure your whole app like that? No problem! We have a special "value" key section we return where you can place *anything*. Use this space to configure your app in any way you see fit! While there is no hard-limitation on the size of the data (you could use 20mb or more here), we recommend you use 64kb or less for practical reasons (the time it takes to load your key/etc).
-
-# Overlays
-An ```overlay``` is a place within your application that can automatically recieve ```activations```. Use them to get both notified that activations and metadata is available, as well as have full control of the display it natively takes within your application.
-
-Overlays can be mapped to named positions called, well, ```positions```. Although you can name any position you want, most templates will include the 4 basic positional names of "top", "bottom", "left" and "right". While you can map any target to any overlay in your app you'd like, the names can help you understand the original intention of the person that curated the content without specifically coordinating with them.
-
-For example, if the person curated content for an L-Bar type of overlay for CTV, and you want to show the content on a Mobile device in portrait mode under your video, simply map all overlay targets to one single overlay you have under your video.
-
-However, if you notice minor data like scoring and ticker information always targets "bottom", you could simply make a special overlay just for that, and show it however you want to.
-
-So for example...
-```java
-FrameLayout mainLayout = findViewById(R.id.main_layout);
-VideoView videoView = findViewById(R.id.video_view);
-
-// SourceSync provides the overlays map to your app...
-Map<String, View> overlays = sourcesync.createPositionedOverlays(
-    distribution,
-    videoView,
     "top", "bottom"
 );
-
-// You then add overlay targets to your layout...
-
-mainLayout.addView(overlays.get("top"));    // Places overlay at top
-mainLayout.addView(overlays.get("bottom")); // Places overlay at bottom
 ```
 
-That's it!
-
-You can also fully control ```activations```. Activations are what is put into your overlays. You can even create your own overlays with 
-
-## Requirements
-- Minimum SDK: Android 24 (Android 7.0)
-- AndroidX
-- Java 11
-
-## Dependencies
-The SDK uses the following dependencies:
-- androidx.appcompat:appcompat:1.6.1
-- com.fasterxml.jackson.core:jackson-databind:2.14.2
-- com.networknt:json-schema-validator:1.0.72
-
-## Features
-- Multiple overlay positions support
-- Automatic content synchronization with video playback
-- Dynamic content loading
-- Transition effects
-- Customizable templates
-- Preview and detail view modes
-
-## Content Structure
-
 ### Distribution
-Represents a content distribution configuration containing:
+Handles:
 - Distribution metadata
 - List of activation instances
 - Time window definitions
 
+Structure:
+```java
+Distribution
+├── id
+├── name
+└── activations[]
+    ├── externalId
+    └── timeWindows[]
+        ├── startTime
+        ├── endTime
+        ├── settings
+        └── position
+```
+
 ### Activation
-Represents a single piece of content that can be displayed:
+Handles:
 - Content metadata
 - Display settings
 - Template definition
 - Visual content data
 
-## Best Practices
-- Initialize SDK early in your application lifecycle
-- Handle back button events for detail view mode
-- Properly dispose of resources when no longer needed
-- Monitor video playback state changes
+### SourceSyncView
+It:
+- Processes content templates
+- Manages visual components
+- Handles layout and positioning
+- Supports different content types through segment processors
 
-## Example Usage
+## Content Flow
 
-Here's a complete example of how to integrate the SDK:
+1. **Distribution Loading**
+   - SDK loads distribution JSON from assets or URLs
+   - Parses activation references
+   - Pre-caches activation content
 
-```java
-public class VideoActivity extends AppCompatActivity {
-    private SourceSync sourcesync;
-    private VideoView videoView;
-    private FrameLayout overlayContainer;
+2. **Overlay Creation**
+   - Creates containers for each specified position
+   - Initializes SourceSyncView instances
+   - Sets up position-specific layouts
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_video);
+3. **Playback Monitoring**
+   - Monitors video position at 100ms intervals
+   - Identifies active time windows
+   - Triggers content updates as needed
 
-        // Initialize SDK
-        sourcesync = SourceSync.setup(this, "your-api-key");
+4. **Content Display**
+   - Loads activation content when needed
+   - Updates relevant overlay positions
+   - Manages visibility states
+   - Logs state changes
 
-        // Set up video view
-        videoView = findViewById(R.id.video_view);
-        overlayContainer = findViewById(R.id.overlay_container);
+## Rendering content natively
 
-        // Load distribution
-        try {
-            Distribution distribution = sourcesync.getDistribution("your-distribution-id");
+While SourceSync of course supports web, many platforms like AppleTV and Roku never will, by design. Therefore, you'll reach a wider audience on CTV and a growing number of specific ad platforms if you use native rendering instead of web.
 
-            // Create overlays
-            Map<String, View> overlays = sourcesync.createPositionedOverlays(
-                distribution,
-                videoView,
-                "top", "bottom"
-            );
+The problem is, there is no widely accepted standard for rendering natively across all platforms.
 
-            // Add overlays to container
-            overlayContainer.addView(overlays.get("top"));
-            overlayContainer.addView(overlays.get("bottom"));
+However, most design tools and AI settled on "segmented strings", especally a JSON representation of them.
 
-        } catch (IOException | JSONException e) {
-            Log.e("VideoActivity", "Error setting up SourceSync", e);
-        }
-    }
+This is what SourceSync uses as well.
 
-    @Override
-    public void onBackPressed() {
-        // Handle back button for detail view
-        if (!sourcesync.handleBackButton()) {
-            super.onBackPressed();
-        }
-    }
-}
+## What is a segmented string?
+
+The classical and simple "segmented string" pattern is used throughout computer science to render UI systems very quickly on native devices with little compute power.
+
+Everything from your OS terminal, to your browser console, to Figma, to Adobe XD and more all use the "segmented string" render pattern.
+
+All native platforms, including iOS and Android also use segmented strings. This is because the pattern is extremely fast for hardware to understand and draw.
+
+iOS, Android, AppleTV, Google TV, Roku and other devices all use segmented strings under the hood to draw all UI at the operating system level.
+
+## What does a segmented string look like?
+
+When it's ready to be rendered by your OS, a segmented string looks much like this (iOS and Android both modify this a little):
+```json
+[{segment:"text",content:"hello world!"}]
 ```
 
-# Creating Activations
-You can use our UI to create activations. Just login to [Kurator](https://admin.sourcesync.io) and click ```activations```.
+However, most segmented strings are stored as JSON till they are ready to be rendered, so that they are more human-readable and easier to reason with and edit directly. We do this too, and that just looks like this:
 
-You can also create your own activations programmatically right from the SDK! All you need is a JSON object, which you can store in your own services, in our services, in your app itself, etc. The JSON is very simple but robust. Here is what a minimal activation looks like...
+```json
+[
+  {
+    "type": "text",
+    "content": "hello world!"
+  }
+]
+```
 
-```jsonc
+If you've ever looked at Figma or Adobe XD files, their format is extremely similar, in fact we designed out system to be interoperable with Figma and Adobe products!
+
+### Segment Processors
+
+SourceSync uses a processor system for different segment types. The following exist today, and more will be added with each additional release:
+
+- `text`: Text content
+- `image`: Image content
+- `button`: Interactive buttons
+- `row`: Horizontal layouts
+- `column`: Vertical layouts
+
+Custom segment types can be added by:
+
+1. Implementing the `SegmentProcessor` interface
+2. Registering the processor with `SegmentProcessorFactory`
+
+Pull requests are always welcome!
+
+## State Management
+
+The SDK maintains several state maps:
+```java
+// Track overlay views by position
+private final Map<String, SourceSyncView> overlayViews
+
+// Track current activation IDs by position
+private final Map<String, Integer> currentActivationIds
+
+// Cache activation content
+private final Map<Integer, Activation> activationCache
+```
+
+## Distribution JSON Format
+```json
 {
-  "id": 1, // Arbitrary, but needed for your app to tell which activation it's being told to render. This is also sent to your anaytics and logs.
-  "name": "Your activation name", // Also arbitrary, but needed for your app and analytics.
-  "instances": [
+  "id": "unique-id",
+  "name": "distribution-name",
+  "data": [
     {
-        "when": {
-            "start": 1000,  // time in ms
-            "end": 5000     // time in ms
+      "externalId": 1,
+      "instances": [
+        {
+          "startTime": 1000,
+          "endTime": 5000,
+          "settings": {
+            "position": "top"
+          }
         }
+      ]
     }
   ]
 }
 ```
-That's all you need!
 
-The above will render an activation with id 1 at 1 second to 5 seconds. 
-
-The above activation will use many default settings for everything since we didn't fill anything out.
-
-There are many more items you can add, besides the minimum...
-
-## Additional settings
-
-```jsonc
+## Activation JSON Format
+```json
 {
-  "id": 1,
-  "name": "Your activation name",
-  "instances": [
-    // The first time it shows up...
-    {
-        "when": {
-            "start": 1000,
-            "end": 5000
-        }
-    },
-    // The second time, etc...
-    {
-        "when": {
-            "start": 10000,
-            "end": 15000
-        }
-    },
-
-  ],
+  "id": "activation-id",
+  "name": "activation-name",
   "settings": {
     "preview": {
-      "title": "My Title",                    // Title text
-      "subtitle": "My Subtitle",              // Subtitle text
-      "titleSize": "lg",                      // Size token: xxs, xs, sm, md, lg, xl, xxl
-      "subtitleSize": "md",                   // Size token: xxs, xs, sm, md, lg, xl, xxl
-      "image": "https://...",                 // Image URL
-      "showFomo": true,                       // Show/hide FOMO indicator
-      "showImage": true,                      // Show/hide image
-      "backgroundAppearance": "imageAndText", // Options: imageAndText, textOnly, imageOnly
-      "backgroundColor": "#000000",           // Background color
-      "backgroundOpacity": 0.66,               // 0.0 to 1.0
-      "template": {
-        // ... you can use a block based native render template of any sort here.
+      "template": [...]
+    }
+  },
+  "template": [
+    {
+      "name": "NativeBlock",
+      "settings": {
+        "segments": [...]
       }
     }
-  },
-  "template": {
-    // ... the same block based native render template format goes here. This is where you would place what is shown when the user clicks details
-  }
+  ]
 }
 ```
 
-# Activation defaults
-In addition to setting an activation data, you can set activation defaults, so if an activation doesn't have a subtitle, you can add a default one, or if it doesn't specify a preview color, ect.
+## Adding New Features
 
-## Default content
-By default, if an activation doesn't fill something out, these defaults will be used.
+When extending the SDK:
 
-To set defaults in your settings....
+1. **New Position Types**
+   - Add position handling in `createPositionedOverlays`
+   - Update layout parameters as needed
+   - Consider adding position-specific behaviors
 
-```jsonc
-{
-    "settings": {
-        "preview": {
-            "defaults": {
-                "default": {
-                    "title": "Hey there!",
-                    "subtitle": "Tap here for details"
-                    // ... etc.
-                }
-            }
-        }
-    }
-}
-```
+2. **New Content Types**
+   - Create new segment processor
+   - Implement rendering logic
+   - Register with SegmentProcessorFactory
 
-## Default template
+3. **New Features**
+   - Consider state management implications
+   - Update relevant monitoring loops
+   - Add appropriate logging
+   - Maintain backwards compatibility
 
-You can also create activation preview template defaults, like this:
-```jsonc
-{
-    "settings": {
-        "preview": {
-            "defaults": {
-                "template": [{
-                    "type": "text",
-                    "content": "{title}", // variable
-                    "attributes": {
-                    "size": "lg",
-                    "color": "#FFFFFF"
-                    }
-                }]
-            }
-        }
-    }
-}
-```
+## Best Practices
 
-## Template variables
+1. **State Management**
+   - Always track state changes
+   - Update state atomically
+   - Clear state appropriately
 
-Any preview setting that can be set can also be used in a template. They are:
-* {title} - text
-* {subtitle} - any size token
-* {titleSize} - text
-* {subtitleSize} - any size token
-* {image} - any valid url
-* {showImage} - boolean - show an image in the preview or not
-* {showFomo} - boolean - show the activation countdown ring
-* {backgroundAppearance} - Use this to define your own
-* {backgroundColor} - #RRGGBB format
-* {backgroundOpacity} - A number between 0 and 1
+2. **Error Handling**
+   - Log errors with context
+   - Fail gracefully
+   - Maintain video playback
 
+3. **Performance**
+   - Cache expensive operations
+   - Minimize UI updates
+   - Consider memory usage
 
-## Displaying your own programmatic activation 
-If you want, you can construct activations in realtime, for any reason...
+4. **Logging**
+   - Log state transitions
+   - Include timing information
+   - Log errors with stack traces
 
-### Method 1 - Without a time period (if you want to set this later)
+## Common Tasks
+
+### Adding a New Position Type
 ```java
-// Step 1: Create JSON WITHOUT an instance array...
-JSONObject activationJson = new JSONObject("""
-{
-  "id": 1,
-  "name": "Custom Activation",
-  "settings": {
-    "preview": {
-      "template": [{
-        "type": "text",
-        "content": "Hello World",
-        "attributes": {
-          "size": "lg",
-          "color": "#FFFFFF"
-        }
-      }]
-    }
-  }
-}
-""");
-
-// Step 2: Create an activation from the JSON...
-Activation activation = Activation.fromJson(activationJson);
-
-// Step 3: Create an activation instance WITH a list of time periods...
-Distribution.ActivationInstance instance = new Distribution.ActivationInstance(1, 
-    Collections.singletonList(new Distribution.TimeWindow(1000, 5000, new JSONObject())));
-
-// Step 4: Add it to your distribution...
-distribution.activations.add(instance);
+// In createPositionedOverlays
+FrameLayout container = new FrameLayout(context);
+LayoutParams params = new LayoutParams(
+    LayoutParams.MATCH_PARENT,
+    LayoutParams.WRAP_CONTENT
+);
+params.gravity = Gravity.YOUR_POSITION;
+container.setLayoutParams(params);
 ```
-### Method 2 - With a time period (If you just want to add it immediately and know when you want it to be displayed)
 
+### Adding a New Segment Type
 ```java
-// Step 1: Create JSON WITH an instance array...
-JSONObject activationJson = new JSONObject("""
-{
-  "id": 1,
-  "name": "Custom Activation",
-  "settings": {
-    "preview": {
-      "template": [{
-        "type": "text",
-        "content": "Hello World",
-        "attributes": {
-          "size": "lg",
-          "color": "#FFFFFF"
-        }
-      }]
+public class NewSegmentProcessor implements SegmentProcessor {
+    @Override
+    public View processSegment(Context context, JSONObject segment) {
+        // Implementation
     }
-  },
-  "instances": [{
-    "when": {
-      "start": 1000,
-      "end": 5000
-    },
-    "settings": {}
-  }]
+
+    @Override
+    public String getSegmentType() {
+        return "new-type";
+    }
 }
-""");
 
-// Step 2: Create an activation from the JSON...
-Activation activation = Activation.fromJson(activationJson);
-
-// Step 3: Create an activation instance WITHOUT time periods...
-Distribution.ActivationInstance instance = ActivationInstance.fromJson(activationJson);
-
-// Step 4: Add it to your distribution...
-distribution.activations.add(instance);
+// Register in SegmentProcessorFactory
+registerProcessor(new NewSegmentProcessor());
 ```
 
-## License
+### Adding New Settings
+```java
+public class TimeWindow {
+    // Add new field
+    public final String newSetting;
 
-Copyright &copy; 2025 Source Digital, Inc.
+    private TimeWindow(...) {
+        // Parse from settings
+        this.newSetting = settings.optString("newSetting", "default");
+    }
+}
+```
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this software except in compliance with the License.
-You may obtain a copy of the License at
+## Testing
 
-    http://www.apache.org/licenses/LICENSE-2.0
+When testing new features:
+1. Test multiple positions simultaneously
+2. Verify state transitions
+3. Check edge cases in timing
+4. Validate error handling
+5. Monitor performance impact
+6. Test with various content types
+7. Verify backwards compatibility
 
-You may use this software however you see fit as long as, if modified, you contribute modifications back to the community.
+## Future Considerations
 
-## Support
-For support, please contact [dev@sourcedigital.net](mailto:dev@sourcedigital.net).
+Potential enhancements:
+1. Animation support
+2. Position-specific styling
+3. Configurable update intervals
+4. Manual position control
+5. Enhanced error handling
+6. Content preloading
+7. Performance optimizations
+8. Transition effects
+
+## Logging
+
+The SDK uses your native logging system respectively, i.e. for Java, logs are prefixed with the tag "SourceSync":
+```java
+Log.d(TAG, String.format("Showing activation %d at position %s, time %d",
+    activationId, position, currentPosition));
+Log.d(TAG, String.format("Hiding activation %d at position %s, time %d",
+    activationId, position, currentPosition));
+```
+
+Monitor logs to track:
+- Activation changes
+- Content loading
+- State transitions
+- Error conditions
