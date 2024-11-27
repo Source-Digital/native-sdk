@@ -38,8 +38,8 @@ dependencies {
 publishing {
     publications {
         register<MavenPublication>("release") {
-            groupId = "io.sourcesync"
-            artifactId = "android"
+            groupId = "com.github.Source-Digital.native-sdk"
+            artifactId = "sourcesync-android"
             version = "1.0.0"
 
             afterEvaluate {

@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SDK Test Harness"
+rootProject.name = "SourceSync Android"
 include(":app")
-include(":sourcesync")
+include(":sourcesync-android")
